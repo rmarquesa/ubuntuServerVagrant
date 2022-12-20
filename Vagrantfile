@@ -15,12 +15,14 @@ Vagrant.configure("2") do |config|
             v.customize ["modifyvm", :id, "--cpus", "4"]
         end
 
-        # MY PUBLIC KEY
+        # MY KEYS
+        config.vm.provision "file", source: "~/.ssh/id_rsa", destination: "/home/vagrant/.ssh/id_rsa"
         config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
         config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/home/vagrant/.ssh/authorized_keys"
 
         # STANDARD
         config.vm.provision "shell", inline: <<-SCRIPT
+            echo "Update, upgrade and install tools"
             apt update
             apt -y upgrade
             apt -y install sshpass net-tools locate wget git
@@ -28,6 +30,7 @@ Vagrant.configure("2") do |config|
 
         # DOCKER
         config.vm.provision "shell", inline: <<-SCRIPT
+            echo "Install Docker"
             curl -fsSL https://get.docker.com | bash
             usermod -aG docker vagrant
             mkdir -p /home/vagrant/.docker
@@ -35,11 +38,15 @@ Vagrant.configure("2") do |config|
         SCRIPT
 
         # HELM
-        config.vm.provision "shell", inline: "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
+        config.vm.provision "shell", inline: <<-SCRIPT
+            echo "Install Helm"
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        SCRIPT
 
         # KUBECTL 
-        config.vm.provision "shell", path: <<-SCRIPT
-            apt -y install -y ca-certificates apt-transport-https
+        config.vm.provision "shell", inline: <<-SCRIPT
+            echo "Install kubectl"
+            apt -y install ca-certificates apt-transport-https
             curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
             echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
             apt update
@@ -47,6 +54,6 @@ Vagrant.configure("2") do |config|
         SCRIPT
 
         # AUTOREMOVE
-        config.vm.provision "shell", inline: "apt -y autoremove"
+        config.vm.provision "shell", inline: "echo autoremove; apt -y autoremove"
     end
 end
